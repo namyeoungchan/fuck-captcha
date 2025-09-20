@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Captcha Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .game-captcha {
+            border: 2px dashed #ddd;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+        .game-captcha--dark {
+            background: #2a2a2a;
+            border-color: #555;
+            color: white;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Game Captcha 테스트 환경</h1>
+        <p>React 컴포넌트를 웹에서 실시간으로 테스트해볼 수 있습니다.</p>
+        
+        <div class="controls">
+            <label>테마: 
+                <select id="themeSelect">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </label>
+            <label>언어: 
+                <select id="localeSelect">
+                    <option value="en">English</option>
+                    <option value="ko">한국어</option>
+                </select>
+            </label>
+            <button onclick="resetCaptcha()">리셋</button>
+        </div>
+        
+        <div id="captcha-container"></div>
+        
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>개발자 도구</h2>
+        <p>브라우저 개발자 도구를 열어 콘솔 로그를 확인할 수 있습니다.</p>
+        <button onclick="window.toggleDevMode()">개발 모드 토글</button>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // GameCaptcha 컴포넌트 (실제 컴포넌트를 여기에 복사)
+        function GameCaptcha({ onSuccess, siteKey, theme = 'light', locale = 'en' }) {
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                const root = containerRef.current;
+                if (!root) return;
+
+                console.log('GameCaptcha 초기화:', { theme, locale, siteKey });
+
+                // 간단한 테스트용 게임 UI 생성
+                root.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <h3>🎮 게임 CAPTCHA</h3>
+                        <p>테스트용 게임입니다. 아래 버튼을 클릭하세요.</p>
+                        <button 
+                            id="game-button" 
+                            style="
+                                padding: 15px 30px; 
+                                font-size: 16px; 
+                                background: ${theme === 'dark' ? '#4caf50' : '#007bff'}; 
+                                color: white; 
+                                border: none; 
+                                border-radius: 4px; 
+                                cursor: pointer;
+                            "
+                        >
+                            🎯 게임 완료하기
+                        </button>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            테마: ${theme} | 언어: ${locale}
+                        </div>
+                    </div>
+                `;
+
+                const button = root.querySelector('#game-button');
+                const handleClick = () => {
+                    const token = 'gc_test_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    console.log('게임 완료! 토큰 생성:', token);
+                    onSuccess(token);
+                };
+
+                button.addEventListener('click', handleClick);
+
+                return () => {
+                    button?.removeEventListener('click', handleClick);
+                };
+            }, [onSuccess, siteKey, theme, locale]);
+
+            return React.createElement('div', {
+                className: `game-captcha game-captcha--${theme}`,
+                ref: containerRef,
+                'aria-label': 'game captcha'
+            });
+        }
+
+        // 테스트 앱
+        function TestApp() {
+            const [theme, setTheme] = useState('light');
+            const [locale, setLocale] = useState('en');
+            const [result, setResult] = useState(null);
+            const [key, setKey] = useState(0); // 컴포넌트 리셋용
+
+            const handleSuccess = (token) => {
+                console.log('CAPTCHA 성공:', token);
+                setResult({
+                    success: true,
+                    token: token,
+                    timestamp: new Date().toLocaleString()
+                });
+                
+                // 결과 표시
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <strong>✅ CAPTCHA 성공!</strong><br>
+                    토큰: <code>${token}</code><br>
+                    시간: ${new Date().toLocaleString()}
+                `;
+            };
+
+            useEffect(() => {
+                // 외부 컨트롤과 연동
+                const themeSelect = document.getElementById('themeSelect');
+                const localeSelect = document.getElementById('localeSelect');
+                
+                const handleThemeChange = (e) => setTheme(e.target.value);
+                const handleLocaleChange = (e) => setLocale(e.target.value);
+                
+                themeSelect.addEventListener('change', handleThemeChange);
+                localeSelect.addEventListener('change', handleLocaleChange);
+                
+                // 전역 함수 등록
+                window.resetCaptcha = () => {
+                    setKey(prev => prev + 1);
+                    setResult(null);
+                    document.getElementById('result').style.display = 'none';
+                };
+                
+                window.toggleDevMode = () => {
+                    console.log('현재 상태:', { theme, locale, result });
+                    alert('개발자 도구를 열어 콘솔을 확인하세요!');
+                };
+
+                return () => {
+                    themeSelect.removeEventListener('change', handleThemeChange);
+                    localeSelect.removeEventListener('change', handleLocaleChange);
+                };
+            }, [theme, locale, result]);
+
+            return React.createElement(GameCaptcha, {
+                key: key,
+                onSuccess: handleSuccess,
+                theme: theme,
+                locale: locale,
+                siteKey: 'test-site-key'
+            });
+        }
+
+        // 렌더링
+        const container = document.getElementById('captcha-container');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(TestApp));
+    </script>
+</body>
+</html>
